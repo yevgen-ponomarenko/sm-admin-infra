@@ -10,9 +10,9 @@ export class TaxonomyService extends core.Construct {
     const bucket = new s3.Bucket(this, "taxonomy");
 
     const handler = new lambda.Function(this, "Handler", {
-      runtime: lambda.Runtime.NODEJS_8_10, // So we can use async in widget.js
-      code: lambda.Code.asset("lambdas"),
-      handler: "taxonomy.main",
+      runtime: lambda.Runtime.NODEJS_10_X,
+      code: lambda.Code.fromAsset("lambdas"),
+      handler: "taxonomy.handler",
       environment: {
         BUCKET: bucket.bucketName
       }
