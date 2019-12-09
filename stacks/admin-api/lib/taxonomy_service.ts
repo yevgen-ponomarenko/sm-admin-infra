@@ -1,10 +1,9 @@
 import apigateway = require("@aws-cdk/aws-apigateway");
 import lambda = require("@aws-cdk/aws-lambda");
 import s3 = require("@aws-cdk/aws-s3");
-import cognito = require("@aws-cdk/aws-cognito");
 import { Construct, Aws } from "@aws-cdk/core";
 import { CfnAuthorizer, AuthorizationType } from "@aws-cdk/aws-apigateway";
-import { UserPool, UserPoolClient, AuthFlow, CfnUserPoolClient } from "@aws-cdk/aws-cognito";
+import { UserPool, CfnUserPoolUser, CfnUserPoolDomain, UserPoolClient, AuthFlow, CfnUserPoolClient } from "@aws-cdk/aws-cognito";
 
 export class TaxonomyService extends Construct {
   constructor(scope: Construct, id: string) {
@@ -23,23 +22,31 @@ export class TaxonomyService extends Construct {
 
     bucket.grantReadWrite(handler);
 
-    const userPool: UserPool = new UserPool(this, "Moderators", {});
+    const userPool: UserPool = new UserPool(this, "Moderators", {});    
+    this.addUser(userPool.userPoolId, "yevgen-ponomarenko", "yevgen.ponomarenko@gmail.com");
+
     const userPoolClient: UserPoolClient = new UserPoolClient(this, "ModeratorsClient",
       {
-        userPoolClientName: "spa",
+        userPoolClientName: "LocalDev",
         userPool: userPool,
         enabledAuthFlows: [AuthFlow.USER_PASSWORD],
-        generateSecret: true
+        generateSecret: false
       });
+
+    const userPoolDomain: CfnUserPoolDomain = new CfnUserPoolDomain(this, "ModeratorsClientDomain", {
+      userPoolId: userPool.userPoolId,
+      domain: "staging-yevgen-ponomarenko"
+    });
+
     const cfnUserPoolClient: CfnUserPoolClient = userPoolClient.node.defaultChild as CfnUserPoolClient;
     cfnUserPoolClient.supportedIdentityProviders = ["COGNITO"];
     cfnUserPoolClient.callbackUrLs = [
-      "https://localhost:4200/signin-callback.html",
-      "https://localhost:4200/silent-renew.html"
+      "http://localhost:4200/signin-callback.html",
+      "http://localhost:4200/silent-renew.html"
     ];
     cfnUserPoolClient.allowedOAuthFlowsUserPoolClient = true;
     cfnUserPoolClient.allowedOAuthFlows = ["code"];
-    cfnUserPoolClient.allowedOAuthScopes = ["openid"];
+    cfnUserPoolClient.allowedOAuthScopes = ["phone", "email", "openid", "aws.cognito.signin.user.admin", "profile"];
 
     const api: apigateway.RestApi = new apigateway.RestApi(this, "Api", {
       restApiName: "Taxonomy Service",
@@ -68,6 +75,14 @@ export class TaxonomyService extends Construct {
     taxonomyResource.addMethod("GET", getTaxonomyIntegration, {
       authorizationType: AuthorizationType.COGNITO,
       authorizer: { authorizerId: auth.ref }
+    });
+  }
+
+  private addUser(userPoolId: string, userName: string, email: string): CfnUserPoolUser {
+    return new CfnUserPoolUser(this, `userName`, {
+      userPoolId: userPoolId,
+      username: userName,
+      userAttributes: [{ name: "email", value: email }]
     });
   }
 }
