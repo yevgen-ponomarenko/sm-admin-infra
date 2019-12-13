@@ -6,6 +6,6 @@ export class AdminApiStack extends cdk.Stack {
     super(scope, id, props);
 
     // tslint:disable-next-line: no-unused-expression
-    new review_service.ReviewService(this, "Taxonomy");
+    new review_service.ReviewService(this, "Labeling");
   }
 }

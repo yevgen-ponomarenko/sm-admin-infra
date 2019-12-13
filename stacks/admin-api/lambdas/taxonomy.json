@@ -1,0 +1,478 @@
+[
+    {
+        "id": 0,
+        "short_name": "NamedEntity",
+        "full_name": "NamedEntity",
+        "children": []
+    },
+    {
+        "id": 1,
+        "short_name": "Reference",
+        "full_name": "Reference",
+        "children": []
+    },
+    {
+        "id": 2,
+        "short_name": "Risk",
+        "full_name": "Risk",
+        "children": [
+            {
+                "id": 3,
+                "short_name": "Other",
+                "full_name": "Other risk (Not in the taxonomy now)",
+                "children": []
+            },
+            {
+                "id": 4,
+                "short_name": "CorporateCrime",
+                "full_name": "Corporate Crime",
+                "children": [
+                    {
+                        "id": 5,
+                        "short_name": "Laundering",
+                        "full_name": "Money Laundering",
+                        "children": []
+                    },
+                    {
+                        "id": 6,
+                        "short_name": "Bribery ",
+                        "full_name": "Bribery (Offering or accepting bribes in a business context)",
+                        "children": []
+                    },
+                    {
+                        "id": 7,
+                        "short_name": "BizCompliance",
+                        "full_name": "Business Compliance (Breaches of financial compliance, violation of regulations, conflicts of interest)",
+                        "children": []
+                    },
+                    {
+                        "id": 8,
+                        "short_name": "Embezzlement",
+                        "full_name": "Embezzlement(Theft or misappropriation of funds)",
+                        "children": []
+                    },
+                    {
+                        "id": 9,
+                        "short_name": "Insider",
+                        "full_name": "Insider trading (Possession of Inside Information, stock tips)",
+                        "children": []
+                    },
+                    {
+                        "id": 10,
+                        "short_name": "Manipulation",
+                        "full_name": "Market Manipulation",
+                        "children": []
+                    },
+                    {
+                        "id": 11,
+                        "short_name": "MoneyService",
+                        "full_name": "Money Service Business",
+                        "children": []
+                    },
+                    {
+                        "id": 12,
+                        "short_name": "Perjury",
+                        "full_name": "Perjury (Obstruction of justice, false filings, false statements)",
+                        "children": []
+                    },
+                    {
+                        "id": 13,
+                        "short_name": "RegAction",
+                        "full_name": "Regulatory Action",
+                        "children": []
+                    },
+                    {
+                        "id": 14,
+                        "short_name": "SecFraud",
+                        "full_name": "Securities Fraud (Stock fraud, short selling, microcap fraud, penny stocks, boiler rooms, Ponzi schemes)",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 15,
+                "short_name": "NonCorporateCrime",
+                "full_name": "Non-Corporate Crime",
+                "children": [
+                    {
+                        "id": 16,
+                        "short_name": "Organized Crime",
+                        "full_name": "Organized Crime",
+                        "children": [
+                            {
+                                "id": 17,
+                                "short_name": "ArmsTraffic",
+                                "full_name": "Arms trafficking (Gun running)",
+                                "children": []
+                            },
+                            {
+                                "id": 18,
+                                "short_name": "Gambling",
+                                "full_name": "Illegal Gambling",
+                                "children": []
+                            },
+                            {
+                                "id": 19,
+                                "short_name": "DrugTraffic",
+                                "full_name": "Drug trafficking (Drug smuggling, distribution)",
+                                "children": []
+                            },
+                            {
+                                "id": 20,
+                                "short_name": "HumanTraffic",
+                                "full_name": "Human trafficking (Migrant smuggling, organ trafficking)",
+                                "children": []
+                            },
+                            {
+                                "id": 21,
+                                "short_name": "IllicitGoods",
+                                "full_name": "Illicit goods (Trafficking/distribution of stolen/counterfeit goods, possession of stolen property)",
+                                "children": []
+                            },
+                            {
+                                "id": 22,
+                                "short_name": "OrgCrime",
+                                "full_name": "Organized crime (Racketeering, mafia, Ndrangheta, Triad)",
+                                "children": []
+                            },
+                            {
+                                "id": 23,
+                                "short_name": "SexExploit",
+                                "full_name": "Sexual exploitation (Illegal brothels, underaged, forced prostitution)",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 24,
+                        "short_name": "ViolentCrime",
+                        "full_name": "Violent Crime",
+                        "children": [
+                            {
+                                "id": 25,
+                                "short_name": "Injury",
+                                "full_name": "Grievous bodily injury",
+                                "children": []
+                            },
+                            {
+                                "id": 26,
+                                "short_name": "Kidnap",
+                                "full_name": "Kidnapping, hostage taking",
+                                "children": []
+                            },
+                            {
+                                "id": 27,
+                                "short_name": "Murder",
+                                "full_name": "Murder",
+                                "children": []
+                            },
+                            {
+                                "id": 28,
+                                "short_name": "Piracy",
+                                "full_name": "Piracy",
+                                "children": []
+                            },
+                            {
+                                "id": 29,
+                                "short_name": "Robbery",
+                                "full_name": "Robbery",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 30,
+                        "short_name": "Misappropriation",
+                        "full_name": "Misappropriation",
+                        "children": [
+                            {
+                                "id": 31,
+                                "short_name": "Burglary",
+                                "full_name": "Burglary",
+                                "children": []
+                            },
+                            {
+                                "id": 32,
+                                "short_name": "GenFraud",
+                                "full_name": "General Fraud (Dummy corporations, accounting fraud, document forgery, impersonation)",
+                                "children": []
+                            },
+                            {
+                                "id": 33,
+                                "short_name": "Extortion",
+                                "full_name": "Extortion",
+                                "children": []
+                            },
+                            {
+                                "id": 34,
+                                "short_name": "Theft",
+                                "full_name": "Theft (Larceny, misappropriation)",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 35,
+                        "short_name": "OtherNonCorporate",
+                        "full_name": "Other Non-Corporate",
+                        "children": [
+                            {
+                                "id": 36,
+                                "short_name": "Currency",
+                                "full_name": "Counterfeiting currency",
+                                "children": []
+                            },
+                            {
+                                "id": 37,
+                                "short_name": "DrugOffence",
+                                "full_name": "Drug Offense (Illegal drug possession/usage)",
+                                "children": []
+                            },
+                            {
+                                "id": 38,
+                                "short_name": "Fugitive",
+                                "full_name": "Fugitive",
+                                "children": []
+                            },
+                            {
+                                "id": 39,
+                                "short_name": "IPCrime",
+                                "full_name": "Intellectual property (Copyright infringement, patent violation, counterfeiting)",
+                                "children": []
+                            },
+                            {
+                                "id": 40,
+                                "short_name": "IllegalWeapons",
+                                "full_name": "Illegal Weapons (Illegal possession/application of arms/ammunition)",
+                                "children": []
+                            },
+                            {
+                                "id": 41,
+                                "short_name": "SexOffense",
+                                "full_name": "Sexual Offense (Rape, sodomy, sexual abuse, pedophilia)",
+                                "children": []
+                            },
+                            {
+                                "id": 42,
+                                "short_name": "Usury",
+                                "full_name": "Usury (Loan sharking, predatory lending)",
+                                "children": []
+                            },
+                            {
+                                "id": 43,
+                                "short_name": "WatchList",
+                                "full_name": "Watch List",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": 44,
+                "short_name": "Taxation",
+                "full_name": "Taxation",
+                "children": [
+                    {
+                        "id": 45,
+                        "short_name": "TaxAvoidance",
+                        "full_name": "Tax Avoidance",
+                        "children": []
+                    },
+                    {
+                        "id": 46,
+                        "short_name": "TaxEvasion",
+                        "full_name": "Tax Evasion",
+                        "children": []
+                    },
+                    {
+                        "id": 47,
+                        "short_name": "TaxHavens",
+                        "full_name": "Tax Havens",
+                        "children": []
+                    },
+                    {
+                        "id": 48,
+                        "short_name": "Smuggling",
+                        "full_name": "Smuggling (Avoiding customs & excise duties)",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 49,
+                "short_name": "LegalAction",
+                "full_name": "Legal Action",
+                "children": [
+                    {
+                        "id": 50,
+                        "short_name": "Antitrust",
+                        "full_name": "Antitrust",
+                        "children": []
+                    },
+                    {
+                        "id": 51,
+                        "short_name": "ClassAction",
+                        "full_name": "Class Action Lawsuit",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 52,
+                "short_name": "ITIssues",
+                "full_name": "IT Issues",
+                "children": [
+                    {
+                        "id": 53,
+                        "short_name": "Breakdown",
+                        "full_name": "Systems breakdown",
+                        "children": []
+                    },
+                    {
+                        "id": 54,
+                        "short_name": "Cybercrime",
+                        "full_name": "Cybercrime (Phishing, hacking, denial of service attack, ransomware, malware, deep fake, identity theft, dark web)",
+                        "children": []
+                    },
+                    {
+                        "id": 55,
+                        "short_name": "DataBreach",
+                        "full_name": "Security & data breaches",
+                        "children": []
+                    },
+                    {
+                        "id": 56,
+                        "short_name": "DataMisuse",
+                        "full_name": "Data Misuse",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 57,
+                "short_name": "Political",
+                "full_name": "Political",
+                "children": [
+                    {
+                        "id": 58,
+                        "short_name": "Corruption",
+                        "full_name": "Corruption, Graft",
+                        "children": []
+                    },
+                    {
+                        "id": 59,
+                        "short_name": "PoliticExpPrsn",
+                        "full_name": "Politically Exposed Person",
+                        "children": []
+                    },
+                    {
+                        "id": 60,
+                        "short_name": "PoliticSensCntry",
+                        "full_name": "Politically sensitive country",
+                        "children": []
+                    },
+                    {
+                        "id": 61,
+                        "short_name": "Terrorism",
+                        "full_name": "Terrorism & Terrorism financing",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 62,
+                "short_name": "Sanctioned",
+                "full_name": "Sanctioned",
+                "children": [
+                    {
+                        "id": 63,
+                        "short_name": "SanctCountry",
+                        "full_name": "Sanctioned Country",
+                        "children": []
+                    },
+                    {
+                        "id": 64,
+                        "short_name": "SanctCompany",
+                        "full_name": "Sanctioned Company",
+                        "children": []
+                    },
+                    {
+                        "id": 65,
+                        "short_name": "SanctPerson",
+                        "full_name": "Sanctioned Person",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 66,
+                "short_name": "EthicalIssues",
+                "full_name": "Ethical Issues",
+                "children": [
+                    {
+                        "id": 67,
+                        "short_name": "AnimalWelfare",
+                        "full_name": "Animal Welfare",
+                        "children": []
+                    },
+                    {
+                        "id": 68,
+                        "short_name": "EcoCrime",
+                        "full_name": "Eco Crime",
+                        "children": []
+                    },
+                    {
+                        "id": 69,
+                        "short_name": "HealthSafety",
+                        "full_name": "Health & Safety Breaches",
+                        "children": []
+                    },
+                    {
+                        "id": 70,
+                        "short_name": "HumanRightsBreach",
+                        "full_name": "Human rights breaches (Child labour, sweatshops, slavery etc)",
+                        "children": []
+                    },
+                    {
+                        "id": 71,
+                        "short_name": "ManagementCompensation",
+                        "full_name": "Management compensation",
+                        "children": []
+                    },
+                    {
+                        "id": 72,
+                        "short_name": "NonEcoPractice",
+                        "full_name": "Ecologically unsound practices",
+                        "children": []
+                    },
+                    {
+                        "id": 73,
+                        "short_name": "Withholding",
+                        "full_name": "Withholding of services or goods (pharmaceutical, medical)",
+                        "children": []
+                    }
+                ]
+            },
+            {
+                "id": 74,
+                "short_name": "ProductFaults",
+                "full_name": "Product Faults",
+                "children": [
+                    {
+                        "id": 75,
+                        "short_name": "ProductRecall",
+                        "full_name": "Product Recall",
+                        "children": []
+                    },
+                    {
+                        "id": 76,
+                        "short_name": "ProductScandal",
+                        "full_name": "Product Scandal",
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+]

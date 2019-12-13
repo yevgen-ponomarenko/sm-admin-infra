@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+  <script>
+
+/**
+    Draws a line (arc) between two spans
+
+    @param {object} elem0 – element from which the arc is drawn
+    @param {object} elem1 – element to which the arc is drawn
+    @param {object} elem0 – CSS class to add to the SVG <path> element
+* */
+function lineBetween(elem0, elem1, className = "") {
+  const pos0 = elem0.getClientRects()[0];
+  const pos1 = elem1.getClientRects()[0];
+  const container = document.getElementById('container');
+  let startPoint = {
+    x: pos0.left + container.scrollLeft - container.offsetLeft + 10,
+    y: pos0.top + container.scrollTop - container.offsetTop
+  }
+  let endPoint = {
+    x: pos1.left + container.scrollLeft - container.offsetLeft + 10,
+    y: pos1.top + container.scrollTop - container.offsetTop
+  }
+  if (Math.abs(endPoint.x - startPoint.x) < 20) {
+    startPoint.y < endPoint.y ? startPoint.y += pos0.height : endPoint.y += pos1.height;
+  }
+
+  const controlPoint = {
+    x: (startPoint.x + endPoint.x) / 2,
+    y: Math.min(startPoint.y, endPoint.y) + ((Math.abs(endPoint.x - startPoint.x) < 20) ? 5 : -80)
+  }
+  const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  arc.setAttribute('d', `
+M ${startPoint.x},${startPoint.y}
+Q ${controlPoint.x},${controlPoint.y} ${endPoint.x},${endPoint.y}`);
+  arc.setAttribute('class', className);
+  return arc;
+}
+
+/**
+    Visualizes the links between the given entity and all risks associated to it
+
+    @param {string} entityId – ID of the entity
+* */
+function highlightRisks(entityId) {
+  if (!currentState.entityToRisks[entityId]) return;
+  for (let i = 0; i < currentState.entityToRisks[entityId].length; i++) {
+    pair0 = document.querySelector('#' + currentState.entityToRisks[entityId][i]);
+    pair1 = document.querySelector('#' + entityId);
+    svg.appendChild(lineBetween(pair0, pair1, `link ${pair0.classList[1]}-path`));
+  }
+}
+
+/**
+    Visualizes the links between the given entity, its chain of aliases, and their risks
+
+    @param {string} entityId – ID of the entity
+* */
+function highlightChain(entityId) {
+  const commonClass = document.querySelector(`#${entityId}`).classList.item(1);
+  const entities = document.querySelectorAll('.' + commonClass);
+  if (entities.length < 1) return;
+  for (let i = 0; i < entities.length; i++) {
+    if (i > 0) {
+      svg.appendChild(lineBetween(entities[i - 1], entities[i], `${commonClass}-path`));
+    }
+    if (currentState.entityToRisks[entities[i].id]) {
+      highlightRisks(entities[i].id);
+    }
+  }
+}
+
+/**
+    Clears all visualizations by removing all the SVG content
+* */
+function clearSVG() {
+  svg.innerHTML = '';
+}
+
+/**
+    Removes all the text selections
+* */
+function deselect() {
+  const sel = window.getSelection();
+  if (sel.rangeCount) {
+    sel.removeAllRanges();
+  }
+}
+
+/**
+    Checks whether the event occured inside the element that should react to it
+    and returns this element if 
+
+    @param {object} event – the DOM event object
+    @param {string} className – HTML class name of the element
+    @return {object} – the element with the given class in which the given event occured
+* */
+function expectedTarget(event, className) {
+  if (event.target.classList.contains(className)) return event.target;
+  else if (event.target.parentNode.classList.contains(className)) return event.target.parentNode;
+  else return false
+}
+
+/**
+    Generates the CSS rules for visualizing the entity/risk and the relevant associations
+
+    @param {string} type – type of the span (either 'entity' or 'risk' by now)
+    @param {number} number – the number to be used as a class modifier
+* */
+function addSelectionCSS(type, number) {
+  const hues = [150, 100, 50, 200, 125, 75, 225, 175, 132, 63, 188, 162, 87, 212, 113, 212, 140, 170, 90];
+
+  const hue = type === 'risk'
+    ? Math.floor(Math.random() * (370 - 340 + 1)) + 340
+    : hues[(number - 1) % hues.length];
+  const className = `${type}${number}`;
+
+  document.styleSheets[0].insertRule(`.${className} \{
+border: 1px solid hsl(${hue}, 90%, 30%);
+background: hsl(${hue}, 60%, var(--lightness));
+\}`);
+  document.styleSheets[0].insertRule(`.${className}-path \{
+stroke-width: 3;
+stroke: hsla(${hue}, 80%, 30%, .7);
+\}`);
+  document.styleSheets[0].insertRule(`.${className}::before \{
+color: hsl(${hue}, 80%, 30%);
+\}`);
+}
+
+/**
+    Generic mechanism that converts the text selection into the labeled span
+
+    @param {boolean} isRisk – if true, means that the span indicates a risk, otherwise the span indicates a NE
+    @param {string} riskType – category of the risk (ignored if isRisk is false)
+* */
+function makeSelection(spanId, riskType = '') {
+  const isRisk = spanId !== 0;
+  const selectionType = isRisk ? 'risk' : 'entity';
+  const collection = isRisk ? currentState.risks : currentState.entities;
+  try {
+    const span = document.createElement("span");
+    const num = collection.reduce(
+      (maxNum, item) => Math.max(parseInt(item.dataset.num.split(selectionType).join('').trim()), maxNum), 0
+    ) + 1;
+    const idNum = collection.reduce(
+      (maxNum, item) => Math.max(parseInt(item.id.replace(selectionType, '')), maxNum), 0
+    ) + 1;
+    span.className = `${selectionType} ${selectionType}${num}`;
+    span.setAttribute('data-num', num);
+    span.setAttribute('id', `${selectionType}${idNum}`);
+    if (isRisk) {
+      span.setAttribute('data-type', riskType);
+      span.setAttribute('data-type-id', spanId);
+    }
+
+    let sel = window.getSelection();
+    if (sel.rangeCount) {
+      let range = sel.getRangeAt(0).cloneRange();
+      range.surroundContents(span);
+      sel.removeAllRanges();
+    }
+    const allEntities = [...document.querySelectorAll('.entity, .risk')];
+    const superL1 = allEntities.filter(el => el.querySelector('.entity, .risk'));
+    superL1.map(el => {
+      if (!el.classList.contains('super-l1')) el.classList.add('super-l1');
+    });
+    const superL2 = allEntities.filter(el => el.querySelector('.super-l1'));
+    superL2.map(el => {
+      if (el.classList.contains('super-l1')) el.classList.remove('super-l1');
+      if (!el.classList.contains('super-l2')) el.classList.add('super-l2');
+    })
+
+    collection.push(span);
+    addSelectionCSS(selectionType, num);
+    addHistoryStep();
+  }
+  catch (ex) {
+    alert('Overlapping selections not supported');
+  }
+}
+
+/**
+    Converts the text selection into the risk span
+
+    @param {string} type – category of the risk
+* */
+function makeSpan(id, type) {
+  makeSelection(id, type);
+}
+
+/**
+    Creates and visualizes the association between a risk and a NE
+
+    @param {object} risk – DOM object representing the risk span
+    @param {object} entity – DOM object representing the NE span
+* */
+function linkRiskToEntity(risk, entity) {
+  const riskId = risk.id;
+  const entityId = entity.id;
+  if (!currentState.riskToEntities[riskId]) {
+    currentState.riskToEntities[riskId] = [entityId];
+  }
+  else if (!currentState.riskToEntities[riskId].includes(entityId)) {
+    currentState.riskToEntities[riskId].push(entityId);
+  }
+  if (!currentState.entityToRisks[entityId]) {
+    currentState.entityToRisks[entityId] = [riskId];
+  }
+  else if (!currentState.entityToRisks[entityId].includes(riskId)) {
+    currentState.entityToRisks[entityId].push(riskId);
+  }
+  setTimeout(() => {
+    clearSVG();
+    highlightChain(entityId);
+  }, 100);
+  addHistoryStep(entityId);
+}
+
+/**
+    Makes the NE the alias of another NE and visualizes the chain of aliases of that NE
+    From the alias chain, the NE coming the earliest in the document is considered the main entity,
+    all the following entities are added to the alias chain one by one
+
+    @param {object} entity0 – DOM object representing one NE
+    @param {object} entity1 – DOM object representing another NE
+* */
+function linkAsAlias(entity0, entity1) {
+  let _entity0, _entity1, alias, main;
+  _entity0 = currentState.aliasToEntities[entity0.id]
+    ? document.querySelector(`#${currentState.aliasToEntities[entity0.id]}`)
+    : entity0;
+  _entity1 = currentState.aliasToEntities[entity1.id]
+    ? document.querySelector(`#${currentState.aliasToEntities[entity1.id]}`)
+    : entity1;
+  if (_entity1.compareDocumentPosition(_entity0) & Node.DOCUMENT_POSITION_PRECEDING) {
+    main = _entity0;
+    alias = _entity1;
+  }
+  else {
+    main = _entity1;
+    alias = _entity0;
+  }
+  currentState.aliasToEntities[alias.id] = alias.id;
+  for (id in currentState.aliasToEntities) {
+    if (currentState.aliasToEntities[id] === alias.id) {
+      const newAlias = document.querySelector(`#${id}`);
+      currentState.aliasToEntities[id] = main.id;
+      newAlias.classList.replace(newAlias.classList.item(1), main.classList.item(1));
+      newAlias.setAttribute('data-num', main.getAttribute('data-num'));
+    }
+  }
+  setTimeout(() => {
+    clearSVG();
+    highlightChain(main.id);
+  }, 100);
+  addHistoryStep(main.id);
+}
+
+/**
+    Adds a new step into the action history
+
+    @param {string} id – ID of the span affected by the action, to visualize its changes when redoing this step
+* */
+function addHistoryStep(id) {
+  currentState.currentStep++;
+  appState.length = currentState.currentStep + 1;
+  appState[currentState.currentStep] = {
+    html: document.getElementById('main').innerHTML.replace(/\<(\/?)title([^>]*)\>/g, '<$1h1$2>'),
+    entities: Array.from(currentState.entities),
+    risks: Array.from(currentState.risks),
+    riskToEntities: JSON.parse(JSON.stringify(currentState.riskToEntities)),
+    entityToRisks: JSON.parse(JSON.stringify(currentState.entityToRisks)),
+    aliasToEntities: JSON.parse(JSON.stringify(currentState.aliasToEntities)),
+    activeId: id
+  };
+  if (currentState.currentStep > 0) document.querySelector('#undoBtn').disabled = false;
+  document.querySelector('#redoBtn').disabled = true;
+}
+
+/**
+    Restores the state from the action history
+
+    @param {number} step – the number of the step to restore the state to
+* */
+function updateState(step) {
+  for (let prop in appState[step]) {
+    if (prop === 'html' || prop === 'activeId') continue;
+    currentState[prop] = (prop === 'entities' || prop === 'risks')
+      ? Array.from(appState[step][prop])
+      : Object.assign({}, appState[step][prop]);
+  }
+  document.getElementById('main').innerHTML = appState[step].html;
+  if (appState[step].activeId) {
+    clearSVG();
+    highlightChain(appState[step].activeId);
+  }
+}
+
+/**
+    Steps back through the action history
+* */
+function undo() {
+  if (currentState.currentStep > 0) {
+    currentState.currentStep--;
+    updateState(currentState.currentStep);
+    document.querySelector('#redoBtn').disabled = false;
+  }
+  if (currentState.currentStep === 0) {
+    document.querySelector('#undoBtn').disabled = true;
+  }
+  clearSVG();
+  return false;
+}
+
+/**
+    Steps forward through the action history
+* */
+function redo() {
+  if (currentState.currentStep < appState.length - 1) {
+    currentState.currentStep++;
+    updateState(currentState.currentStep);
+    document.querySelector('#undoBtn').disabled = false;
+  }
+  if (currentState.currentStep === appState.length - 1) {
+    document.querySelector('#redoBtn').disabled = true;
+  }
+  return false;
+}
+
+/**
+    Exports the current state in the JSON output format, calculating the character offsets of the spans
+* */
+function makeOutputJson() {
+  const output = {
+    'entities': [],
+    'risks': [],
+    'aliases': [],
+    'risks_relations': [],
+  };
+
+  const aliasGroups = [];
+  for (let entity in currentState.aliasToEntities) {
+    if (!aliasGroups[currentState.aliasToEntities[entity]]) {
+      aliasGroups[currentState.aliasToEntities[entity]] = [entity];
+    }
+    else aliasGroups[currentState.aliasToEntities[entity]].push(entity);
+  }
+
+  for (let entity in aliasGroups) {
+    output.aliases.push({
+      group_in_doc_id: entity,
+      entities_in_group: aliasGroups[entity]
+    });
+  }
+
+  let i = 0;
+  for (let risk in currentState.riskToEntities) {
+    for (let j = 0, entity; entity = currentState.riskToEntities[risk][j]; j++) {
+      output.risks_relations.push({
+        rel_in_doc_id: i + j + 1,
+        entity: entity,
+        risk: risk
+      });
+    }
+    i++;
+  }
+
+  const treeWalker = document.createTreeWalker(document.getElementById('main'), 5);
+
+  let index = 0;
+  let node;
+  let activeNodesStack = [];
+  let state;
+  let wasTrailingSpace = true;
+  while (node = treeWalker.nextNode()) {
+    if (node.nodeType === 1) {
+      activeNodesStack.push({
+          node: node,
+          start: index
+        }
+      );
+      state = 'in_node';
+    } 
+    else if(node.nodeType === 3) {
+      if (state === 'in_text' && activeNodesStack.length > 0) {
+        const lastNode = activeNodesStack.pop();
+
+        if (lastNode.node.classList.contains('entity')) {
+          output.entities.push({
+            span_in_doc_id: lastNode.node.id,
+            start: lastNode.start,
+            end: index,
+            text: lastNode.node.innerText.replace(/\s+/g, ' ')
+          });
+        }
+
+        if (lastNode.node.classList.contains('risk')) {
+          const { type, typeId } = lastNode.node.dataset;
+          output.risks.push({
+            span_in_doc_id: lastNode.node.id,
+            class: typeId,
+            class_label: type,
+            start: lastNode.start,
+            end: index,
+            text: lastNode.node.innerText.replace(/\s+/g, ' ')
+          });
+        }
+      }
+      state = 'in_text';
+      let textPortion = node.nodeValue.replace(/\s+/g, ' ');
+      if (wasTrailingSpace) textPortion = textPortion.trimLeft();
+      /* counting Unicode code points (surrogate pair counts as 1) instead of char codes
+         (for compatibility with Python 3) */
+      index += [...textPortion].length;
+      if (textPortion.length > 0) {
+        wasTrailingSpace = /\s$/.test(textPortion);
+      }
+    }
+  }
+
+  return JSON.stringify(output);
+}
+
+/**
+    Opens the submit confirm modal dialog
+* */
+function confirmSubmit() {
+  const modal = document.getElementById('confirmSubmitModal');
+  modal.style.display = 'grid';
+  setTimeout((function () {
+    this.style.opacity = '1';
+  }).bind(modal), 10);
+}
+
+/**
+    Closes the submit confirm modal dialog
+* */
+function hideModal() {
+  const modal = document.getElementById('confirmSubmitModal');
+  modal.style.opacity = 0;
+  setTimeout((function () {
+    this.style.display = 'none'
+  }).bind(modal), 300);
+}
+
+/**
+    "Submit" button activation behavior
+* */
+function submitData() {
+  document.querySelector('crowd-form').submit();
+  hideModal();
+};
+
+/**
+    Initializes the entities connect funtionality
+* */
+function initConnectEntities() {
+
+  const lineEnd = document.getElementById('lineEnd');
+
+  const mouseStates = {
+    inText: 0,
+    inFirstItem: 1,
+    betweenItems: 2,
+    inSecondItem: 3
+  };
+  let mouseState = mouseStates.inText;
+  let connecting = null;
+
+  document.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('entity') || e.target.classList.contains('risk')) {
+      mouseState = mouseStates.inFirstItem;
+      connecting = [e.target];
+    }
+  });
+
+  document.addEventListener('mouseout', e => {
+    if (e.target.classList.contains('entity') || e.target.classList.contains('risk')) {
+      switch (mouseState) {
+        case mouseStates.inSecondItem:
+          connecting.length = 1;
+        case mouseStates.inFirstItem:
+          mouseState = mouseStates.betweenItems;
+          document.body.classList.add('noselect');
+      }
+    }
+  });
+
+  document.addEventListener('mouseover', e => {
+    if (mouseState === mouseStates.betweenItems && (e.target.classList.contains('entity') || e.target.classList.contains('risk'))) {
+      if (e.target === connecting[0]) {
+        mouseState = mouseStates.inFirstItem;
+        document.body.classList.remove('noselect');
+        clearSVG();
+        return;
+      }
+      mouseState = mouseStates.inSecondItem;
+      connecting[1] = e.target;
+    }
+  });
+
+  document.addEventListener('mouseup', function (e) {
+    if (mouseState === mouseStates.inSecondItem) {
+      const type0 = connecting[0].classList.item(0);
+      const type1 = connecting[1].classList.item(0);
+
+      if (type0 === 'risk' && type1 === 'entity') {
+        linkRiskToEntity(connecting[0], connecting[1]);
+      }
+      else if (type0 === 'entity' && type1 === 'risk') {
+        linkRiskToEntity(connecting[1], connecting[0]);
+      }
+      else if (type0 === 'entity' && type1 === 'entity') {
+        linkAsAlias(connecting[0], connecting[1]);
+      }
+      deselect();
+    }
+
+    connecting = null;
+    document.body.classList.remove('noselect');
+    if (mouseState === mouseStates.inSecondItem) deselect();
+    mouseState = mouseStates.inText;
+  });
+
+  window.addEventListener('mousemove', function (e) {
+    if (mouseState === mouseStates.betweenItems) {
+      lineEnd.style.left = e.clientX + 'px';
+      lineEnd.style.top = e.clientY + 'px';
+      clearSVG();
+      svg.appendChild(lineBetween(connecting[0], lineEnd, `temporary`));
+    }
+  });
+}
+
+/**
+    Makes the hierarchical risk taxonomy menu
+
+    @param {object} branch – recursive JSON taxonomy data
+* */
+function makeMenu(branch) {
+  let markup = '';
+  for (let i = 0; i < branch.length; i++) {
+    if (branch[i].id === 1) continue;
+    const hasChildren = branch[i].children.length > 0;
+    markup += `
+    <li class="menu-base">
+      <button ${hasChildren ? 'disabled' : 'onclick="makeSpan(' + branch[i].id + ', \'' + branch[i].short_name + '\')"'}>
+      ${branch[i].full_name.replace(/\((.+)\)/, '<small>($1)</small>')}
+      ${hasChildren ? '<span class="menu-arrow">▸</span>' : ''}</button>
+      ${hasChildren ? '<ul class="menu-level">' + makeMenu(branch[i].children) + '</ul>' : ''}
+    </li>`;
+  }
+  return markup;
+}
+
+/* Initializes the taxonomy dropdown functionality */
+function initTaxonomyMenu() {
+
+  let activeMenuBase = document.getElementById('taxonomy_menu');
+
+  window.addEventListener('contextmenu', function (e) {
+    if (window.getSelection().isCollapsed) return;
+    activeMenuBase.classList.add('menu-on');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', function (e) {
+    const menu = event.target.closest('.menu-base') || document.getElementById('taxonomy_menu');
+
+    if (!menu.classList.contains('menu-on')) {
+      const submenu = menu.querySelector('ul');
+      if (!submenu) return;
+
+      let { top, right, bottom } = menu.getBoundingClientRect();
+      right += submenu.offsetWidth;
+      top += submenu.offsetHeight;
+
+      const classX = right < window.innerWidth - 20 ? 'left' : 'right';
+      const classY = top < window.innerHeight - 20  ? 'top' : 'bottom';
+      menu.classList.remove('left', 'right', 'top', 'bottom');
+      menu.classList.add(classX, classY);
+
+      if (classY == 'bottom' && bottom < submenu.offsetHeight + 20) {
+        const shift = submenu.offsetHeight - bottom + 20;
+        menu.style.paddingBottom = shift + 'px';
+        menu.style.marginBottom = -shift + 'px';
+      }
+
+      if (menu.id === 'taxonomy_menu') {
+        menu.style.left = e.clientX + (classX === 'left' ? -40 : 40) + 'px';
+        menu.style.top = e.clientY + (classY === 'top' ? 16 : -16) + 'px';
+      }
+      else {
+        menu.classList.add('menu-on');
+      }
+    }
+
+    activeMenuBase = menu;
+  });
+
+  window.addEventListener('mouseout', function (event) {
+    for (let el = event.target; el; el = el.parentNode) {
+      if (el.classList && el.classList.contains('menu-on') && el.id !== 'taxonomy_menu') {
+        clearTimeout(el.hideTimeout);
+        el.hideTimeout = setTimeout(() => {
+          el.classList.remove('menu-on');
+          el.style = null;
+        }, 200);
+      }
+    }
+  });
+
+  window.addEventListener('mouseover', function (event) {
+    for (let el = event.target; el; el = el.parentNode) {
+      if (el.classList && el.classList.contains('menu-on')) {
+        clearTimeout(el.hideTimeout);
+      }
+    }
+  });
+
+  const hideMenu = e => {
+    [...document.querySelectorAll('.menu-on')].map(el => {
+      el.classList.remove('menu-on');
+    });
+    activeMenuBase = document.getElementById('taxonomy_menu');
+  }
+
+  document.getElementById('container').addEventListener('scroll', hideMenu);
+
+  window.addEventListener('click', hideMenu);
+}
+
+/* Initializes the editing button functionality */
+function initEditing() {
+
+  const menu = document.getElementById('edit_menu');
+
+  const removeRisk = riskId => {
+    let newRiskToEntities = {};
+    for (let id in currentState.riskToEntities) {
+      if (id != riskId) newRiskToEntities[id] = currentState.riskToEntities[id];
+    }
+    let newEntityToRisks = {}
+    for (let entity in currentState.entityToRisks) {
+      const newRisks = currentState.entityToRisks[entity].filter(id => id != riskId);
+      if (newRisks.length > 0) newEntityToRisks[entity] = newRisks;
+    }
+
+    const nextState = {
+      entityToRisks: newEntityToRisks,
+      riskToEntities: newRiskToEntities,
+      risks: currentState.risks.filter(item => item.id !== riskId),
+    }
+
+    for (let key in nextState) {
+      currentState[key] = nextState[key];
+    }
+  }
+
+  const removeEntity = entityId => {
+    let newAliasToEntities = {};
+    let newChainHead;
+    for (let id in currentState.aliasToEntities) {
+      if (id === entityId) continue;
+      if (currentState.aliasToEntities[id] === entityId) {
+        if (newChainHead) {
+          newAliasToEntities[id] = newChainHead;
+        }
+        else {
+          newChainHead = id;
+        }
+        document.getElementById(id).classList.add(newChainHead);
+        document.getElementById(id).classList.remove(entityId);
+      }
+      else {
+        newAliasToEntities[id] = currentState.aliasToEntities[id];
+      }
+    }
+    let newEntityToRisks = {};
+    for (let id in currentState.entityToRisks) {
+      if (id != entityId) newEntityToRisks[id] = currentState.entityToRisks[id];
+    }
+    let newRiskToEntities = {}
+    for (let risk in currentState.riskToEntities) {
+      const newEntities = currentState.riskToEntities[risk].filter(id => id != entityId);
+      console.log(risk, newEntities)
+      if (newEntities.length > 0) newRiskToEntities[risk] = newEntities;
+    }
+    const nextState = {
+      aliasToEntities: newAliasToEntities,
+      entities: currentState.entities.filter(item => item.id !== entityId),
+      entityToRisks: newEntityToRisks,
+      riskToEntities: newRiskToEntities
+    }
+
+    for (let key in nextState) {
+      currentState[key] = nextState[key];
+    }
+
+    return newChainHead;
+  }
+
+  const removeSpan = () => {
+    let type, collection;
+    clearSVG();
+    const itemId = window.selectedItem.id;
+    if (window.selectedItem.classList.contains('risk')) {
+      removeRisk(itemId);
+    } else {
+      removeEntity(itemId);
+    }
+
+    document.getElementById(itemId).outerHTML = document.getElementById(itemId).innerHTML;
+    addHistoryStep();
+    menu.classList.remove('on');
+  }
+
+  document.addEventListener('mouseout', e => {
+    if (e.target.classList.contains('entity') || e.target.classList.contains('risk') || e.target.closest('#edit_menu')) {
+      menu.classList.remove('on');
+    }
+  });
+
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest('#edit_menu')) {
+      menu.classList.add('on');
+    }
+    else if ((e.target.classList.contains('entity') || e.target.classList.contains('risk'))) {
+      const { top, right } = [...e.target.getClientRects()].pop();
+      menu.style.left = right - 16 + 'px';
+      menu.style.top = top - 16 + 'px';
+      menu.classList.add('on');
+      window.selectedItem = e.target;
+    }
+  });
+
+  menu.addEventListener('click', removeSpan);
+
+}
+
+/*** I N I T I A L I Z A T I O N ***/
+
+const appState = [];
+const currentState = {
+  entities: [],
+  risks: [],
+  riskToEntities: {},
+  entityToRisks: {},
+  aliasToEntities: {},
+  currentStep: -1
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+
+  window.svg = document.getElementById('lines');
+
+  const taxonomy = document.querySelector("#taxonomy").textContent;
+  document.getElementById('taxonomy_menu_root').innerHTML = makeMenu(JSON.parse(taxonomy));
+
+  const text = document.querySelector("#main").innerText;
+  const html = atob(text).replace(/html:/g, '');
+  document.querySelector("#main").innerHTML = html;
+
+  document.querySelector('crowd-form').onsubmit = function () {
+    document.getElementById('annotations').value = makeOutputJson();
+  };
+
+  document.getElementById('submitButton').onclick = confirmSubmit;
+
+  initConnectEntities();
+  initTaxonomyMenu();
+  initEditing();
+
+  window.addEventListener('resize', function () {
+    clearSVG();
+    if (document.body.className != '') {
+      const activeClass = document.body.className.split('-')[0];
+    }
+  });
+
+  document.body.addEventListener('click', function (event) {
+    let myTarget;
+    clearSVG();
+    document.body.className = '';
+    if (myTarget = expectedTarget(event, 'entity')) {
+      const activeClass = myTarget.classList.item(1);
+      highlightChain(activeClass);
+    }
+    else if (myTarget = expectedTarget(event, 'risk')) {
+      const linkedEntityIds = currentState.riskToEntities[myTarget.id];
+      if (!linkedEntityIds) return;
+      linkedEntityIds.map(entity => {
+        const activeClass = document.querySelector(`#${entity}`).classList.item(1);
+        highlightChain(activeClass);
+      });
+    }
+  });
+
+  addHistoryStep();
+});
+  </script>
+
+  <style>
+
+body {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+}
+
+html body {
+  height: auto; /* override SageMaker's default style to make SVG stretch to the whole content */
+}
+
+.ui-display {
+  display: grid;
+  grid: auto 1fr / 1fr;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  padding: 3px 10%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.toolbar :last-child {
+  margin-inline-start: auto;
+}
+
+main {
+  padding: 50px 10%;
+  font: 1em/1.8 sans-serif;
+}
+
+.entity,
+.risk {
+  padding: 1px 5px 1px 2px;
+  margin: 1px;
+  display: inline;
+  line-height: 1.3;
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+  --lightness: 80%;
+}
+
+.super-l1 {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  --lightness: 90%;
+}
+
+.super-l2 {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  --lightness: 95%;
+}
+
+main title {
+  display: block;
+  margin: 1em 0;
+}
+
+h1, main title {
+  font-size: 1.5em;
+  font-weight: normal;
+}
+
+h1 .entity,
+h1 .risk {
+  line-height: 1.1;
+}
+
+.risk {
+  color: red;
+}
+
+.entity::before,
+.risk::before {
+  content: attr(data-num);
+  display: inline-block;
+  padding: 0 0.5em;
+  font: bold .875rem/1 sans-serif;
+  white-space: nowrap;
+}
+
+.risk::after {
+  content: attr(data-type);
+  position: absolute;
+  top: -1.1em;
+  left: 20px;
+  font: normal .75rem/1 sans-serif;
+  white-space: nowrap;
+}
+
+.risk::before {
+  margin-top: 14px;
+}
+
+svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+
+path {
+  fill: none;
+}
+
+button {
+  font: 1rem/1.2 sans-serif;
+}
+
+.noselect {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#taxonomy_menu {
+  position: fixed;
+  background: #fff;
+  z-index: 100;
+  user-select: none;
+  font-size: 0.875em;
+  visibility: hidden;
+}
+
+#taxonomy_menu li {
+  padding: 1px 0;
+}
+
+.menu-base {
+  position: relative;
+}
+
+.menu-on {
+  visibility: visible;
+}
+
+#taxonomy_menu button {
+  padding: 8px 40px 8px 8px;
+  flex: 1;
+  cursor: pointer;
+  text-align: start;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: none;
+  background: transparent;
+  color: #666;
+  white-space: nowrap;
+}
+
+#taxonomy_menu :last-child > button {
+  padding-bottom: 16px;
+}
+
+#taxonomy_menu button:disabled {
+  pointer-events: none;
+}
+
+.menu-arrow {
+  float: right;
+  margin-right: -32px;
+}
+
+#taxonomy_menu small {
+  display: block;
+  margin: 2px -40px -2px -2px;
+  line-height: 0;
+  opacity: 0;
+  transition: line-height 0.2s linear 0.1s, opacity 0.2s;
+  white-space: normal;
+}
+
+#taxonomy_menu button:hover > small {
+  line-height: 1.1;
+  opacity: 1;
+  transition: opacity 0.2s 0.1s, line-height 0.2s ease-out;
+}
+
+#taxonomy_menu button:disabled {
+  opacity: 1;
+}
+
+#taxonomy_menu li:hover > button {
+  color: #000;
+  background: #eee;
+}
+
+.menu-level {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  box-shadow: 1px 2px 5px rgba(0,0,0,.5);
+  visibility: hidden;
+}
+
+
+.left > .menu-level {
+  left: 100%;
+}
+
+.right > .menu-level {
+  right: 100%;
+}
+
+.top > .menu-level {
+  top: 0;
+}
+
+.bottom > .menu-level {
+  bottom: 0;
+}
+
+.menu-level li {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  flex-flow: column;
+  position: relative;
+}
+
+.menu-on > .menu-level,
+.menu-level:hover {
+  visibility: visible;
+  transition: visibilty .1s .2s;
+}
+
+#taxonomy_menu li:hover {
+  z-index: 1;
+}
+
+#edit_menu {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s .5s;
+  z-index: 5;
+}
+
+#edit_menu.on {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.edit_menu__button {
+  color: red;
+  font-weight: bold;
+  background: #fff;
+  border: 1px solid #545bsma;
+  padding: 3px 9px;
+  border-radius: 2px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+#lineEnd {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.temporary {
+  stroke-width: 1;
+  stroke: rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  grid: 1fr / 1fr;
+  display: none;
+  opacity: 0;
+  transition: opacity .3s;
+  z-index: 10;
+}
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.2);
+  grid-row: 1;
+  grid-column: 1;
+  overflow: auto;
+}
+
+.modal-scroll-mock {
+  height: 100%;
+}
+
+.modal-body {
+  grid-row: 1;
+  grid-column: 1;
+  align-self: center;
+  justify-self: center;
+  background: #fff;
+  padding: 3em;
+  box-shadow: 3px 5px 10px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+.modal-controls {
+  margin-top: 2em;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.modal crowd-button {
+  user-select: none;
+}
+
+#taxonomy {
+  display: none;
+}
+
+.workspace {
+  overflow: auto;
+}
+
+.svg-container {
+  position: relative;
+}
+
+  </style>
+</head>
+
+<body>
+  <div id="taxonomy">{{ task.input.taxonomy }}</div>
+
+  <div id="taxonomy_menu" class="menu-base">
+    <ul id="taxonomy_menu_root" class="menu-level"></ul>
+  </div>
+
+  <div id="edit_menu" class="">
+    <button class="edit_menu__button" title="Remove this span">&times;</button>
+  </div>
+
+  <div class="ui-display">
+    <div class="toolbar">
+      <crowd-button onclick="event.stopPropagation(); return undo()" disabled id="undoBtn">Undo</crowd-button>
+      <crowd-button onclick="event.stopPropagation(); return redo()" disabled id="redoBtn">Redo</crowd-button>
+      <crowd-button id="submitButton">Submit</crowd-button>
+    </div>
+    <div class="workspace" id="container">
+      <div class="svg-container">
+        <main id="main">{{ task.input.text }}</main>
+        <svg id="lines"></svg>
+        <div id="lineEnd"></div>
+      </div>
+    </div>
+    <crowd-form>
+      <input name="annotations" id="annotations" type="hidden">
+    
+      <!-- Prevent crowd-form from creating its own button -->
+      <crowd-button form-action="submit" style="display: none;"></crowd-button>
+    </crowd-form>
+  </div>
+
+  <div class="modal" id="confirmSubmitModal">
+    <div class="modal-overlay">
+      <div class="modal-scroll-mock"></div>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you have finished this annotation task?</p>
+      <div class="modal-controls">
+        <crowd-button onclick="event.stopPropagation(); return submitData()">Yes</crowd-button>
+        <crowd-button onclick="event.stopPropagation(); return hideModal()">No</crowd-button>
+      </div>
+    </div>
+  </div>
+
+
+</body>
+
+</html>
