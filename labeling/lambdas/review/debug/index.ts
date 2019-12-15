@@ -1,4 +1,4 @@
-import review = require("../lambdas/review");
+import review = require("../app");
 import * as fs from "fs";
 import * as path from 'path';
 import { APIGatewayProxyEvent } from "aws-lambda";

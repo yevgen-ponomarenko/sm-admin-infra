@@ -42,7 +42,7 @@ export class UserPoolBuilder {
   public WithDomain(resourceId: string, domain: string): UserPoolBuilder {
     this._userPoolDomainResourceId = resourceId;
     this._userPoolDomainName = domain;
-    return this;
+    return this;2
   }
 
   public Build(scope: Construct): UserPool | undefined {

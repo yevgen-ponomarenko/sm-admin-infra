@@ -1,7 +1,7 @@
 import cdk = require("@aws-cdk/core");
-import review_service = require("../lib/review_service");
+import review_service = require("./review-service");
 
-export class AdminApiStack extends cdk.Stack {
+export class SmAdminWebStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 

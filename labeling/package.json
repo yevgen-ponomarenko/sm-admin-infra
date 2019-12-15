@@ -1,8 +1,8 @@
 {
-  "name": "admin-api",
+  "name": "labeling",
   "version": "0.1.0",
   "bin": {
-    "admin-api": "bin/admin-api.js"
+    "labeling": "bin/labeling.js"
   },
   "scripts": {
     "build": "tsc",

@@ -4,7 +4,7 @@ import s3 = require("@aws-cdk/aws-s3");
 import { Construct, Aws } from "@aws-cdk/core";
 import { CfnAuthorizer, AuthorizationType, ContentHandling } from "@aws-cdk/aws-apigateway";
 import { UserPool, AuthFlow } from "@aws-cdk/aws-cognito";
-import { UserPoolBuilder } from './UserPoolBuilder';
+import { UserPoolBuilder } from '../utils/user-pool-builder';
 
 export class ReviewService extends Construct {
   constructor(scope: Construct, id: string) {
@@ -14,8 +14,10 @@ export class ReviewService extends Construct {
     const bucket: s3.Bucket = new s3.Bucket(this, "Review", {});    
     const handler: lambda.Function = new lambda.Function(this, "Handler", {
       runtime: lambda.Runtime.NODEJS_10_X,
-      code: lambda.Code.fromAsset("lambdas"),
-      handler: "review.handler",
+      code: lambda.Code.fromAsset("lambdas/review", {
+        exclude: ["*.ts", "package*.json", "debug"],
+      }),
+      handler: "app.handler",
       environment: {
         BUCKET: bucket.bucketName
       }

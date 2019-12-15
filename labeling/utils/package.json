@@ -1,0 +1,8 @@
+{
+  "name": "labeling-utils",
+  "version": "0.1.0",  
+  "dependencies": {    
+    "@aws-cdk/aws-cognito": "^1.18.0",        
+    "@aws-cdk/core": "^1.18.0"    
+  }
+}

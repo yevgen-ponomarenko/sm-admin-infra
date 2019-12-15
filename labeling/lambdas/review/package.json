@@ -1,6 +1,7 @@
 {
   "name": "review-dependencies",
   "dependencies": {
+    "labeling-utils": "file:../../utils",
     "liquidjs": "^9.5.0"
   }
 }
